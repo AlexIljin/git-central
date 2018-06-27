@@ -17,6 +17,9 @@
 # hooks.update-allow-tags-branches.nakedtag
 #   This boolean sets whether tags are allowed into the repo to commits
 #   that are not pointed to by a branch. By default they won't be.
+# hooks.update-allow-tags-branches.tagnameregexp
+#   This regular expression string, if not empty, must match the tag name
+#   for the tag to be accepted.
 #
 
 . $(dirname $0)/functions
@@ -31,6 +34,7 @@ allowunannotatedtag=$(git config --bool hooks.update-allow-tags-branches.unannot
 allowdeletebranch=$(git config --bool hooks.update-allow-tags-branches.deletebranch)
 allowdeletetag=$(git config --bool hooks.update-allow-tags-branches.deletetag)
 allownakedtag=$(git config --bool hooks.update-allow-tags-branches.nakedtag)
+tagnameregexp=$(git config hooks.update-allow-tags-branches.tagnameregexp)
 
 # --- Check types
 # if $newrev is 0000...0000, it's a commit to delete a ref.
@@ -59,6 +63,14 @@ case "$refname","$newrev_type" in
 			display_error_message "Tag names must not include the master branch name, ever."
 			exit 1
 		fi
+		# Check the tag name against the allowed pattern.
+		if [ "$tagnameregexp" != "" ] ; then
+			echo $refname| grep "$tagnameregexp" > /dev/null
+			if [ $? -ne 0 ] ; then
+				display_error_message "The tag $short_refname violates the tag naming convention, rejected."
+				exit 1
+			fi
+		fi
 		;;
 	refs/tags/*,delete)
 		# delete tag
@@ -80,6 +92,14 @@ case "$refname","$newrev_type" in
 		if [ $? -eq 0 ] ; then
 			display_error_message "Tag names must not include the master branch name, ever."
 			exit 1
+		fi
+		# Check the tag name against the allowed pattern.
+		if [ "$tagnameregexp" != "" ] ; then
+			echo $refname| grep "$tagnameregexp" > /dev/null
+			if [ $? -ne 0 ] ; then
+				display_error_message "The tag $short_refname violates the tag naming convention, rejected."
+				exit 1
+			fi
 		fi
 		;;
 	refs/heads/*,commit)
