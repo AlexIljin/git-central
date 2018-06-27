@@ -53,6 +53,12 @@ case "$refname","$newrev_type" in
 			display_error_message "The tag $short_refname is not included in any branch"
 			exit 1
 		fi
+		# The word "master" is not allowed in the tag name.
+		echo $refname| grep -i master > /dev/null
+		if [ $? -eq 0 ] ; then
+			display_error_message "Tag names must not include the master branch name, ever."
+			exit 1
+		fi
 		;;
 	refs/tags/*,delete)
 		# delete tag
@@ -67,6 +73,12 @@ case "$refname","$newrev_type" in
 		contains=$(git branch --contains "$newrev" | wc -l)
 		if [ $contains -eq 0 -a "$allownakedtag" != "true" ] ; then
 			display_error_message "The tag $short_refname is not included in any branch"
+			exit 1
+		fi
+		# The word "master" is not allowed in the tag name.
+		echo $refname| grep -i master > /dev/null
+		if [ $? -eq 0 ] ; then
+			display_error_message "Tag names must not include the master branch name, ever."
 			exit 1
 		fi
 		;;
