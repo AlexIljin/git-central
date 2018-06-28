@@ -20,6 +20,9 @@
 # hooks.update-allow-tags-branches.tagnameregexp
 #   This regular expression string, if not empty, must match the tag name
 #   for the tag to be accepted.
+# hooks.update-allow-tags-branches.tagnamehint
+#   This message will be displayed in addition to the tag rejection to show
+#   the correct tag format to the client.
 #
 
 . $(dirname $0)/functions
@@ -35,6 +38,11 @@ allowdeletebranch=$(git config --bool hooks.update-allow-tags-branches.deletebra
 allowdeletetag=$(git config --bool hooks.update-allow-tags-branches.deletetag)
 allownakedtag=$(git config --bool hooks.update-allow-tags-branches.nakedtag)
 tagnameregexp=$(git config hooks.update-allow-tags-branches.tagnameregexp)
+tagnamehint=$(git config hooks.update-allow-tags-branches.tagnamehint)
+
+if [ "$tagnamehint" != "" ]; then
+	tagnamehint="Valid tag name format: $tagnamehint"
+fi
 
 # --- Check types
 # if $newrev is 0000...0000, it's a commit to delete a ref.
@@ -67,7 +75,7 @@ case "$refname","$newrev_type" in
 		if [ "$tagnameregexp" != "" ] ; then
 			echo $refname| grep "$tagnameregexp" > /dev/null
 			if [ $? -ne 0 ] ; then
-				display_error_message "The tag $short_refname violates the tag naming convention, rejected."
+				display_error_message "The tag $short_refname violates the tag naming convention, rejected." "$tagnamehint"
 				exit 1
 			fi
 		fi
@@ -97,7 +105,7 @@ case "$refname","$newrev_type" in
 		if [ "$tagnameregexp" != "" ] ; then
 			echo $refname| grep "$tagnameregexp" > /dev/null
 			if [ $? -ne 0 ] ; then
-				display_error_message "The tag $short_refname violates the tag naming convention, rejected."
+				display_error_message "The tag $short_refname violates the tag naming convention, rejected." "$tagnamehint"
 				exit 1
 			fi
 		fi
