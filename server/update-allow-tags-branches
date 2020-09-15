@@ -8,6 +8,9 @@
 # hooks.update-allow-tags-branches.unannotatedtag
 #   This boolean sets whether unannotated tags will be allowed into the
 #   repository.  By default they won't be.
+# hooks.update-allow-tags-branches.createtag
+#   This boolean sets whether creating tags will be allowed in the
+#   repository.  By default they will be.
 # hooks.update-allow-tags-branches.deletetag
 #   This boolean sets whether deleting tags will be allowed in the
 #   repository.  By default they won't be.
@@ -35,6 +38,7 @@ newrev="$3"
 # --- Config
 allowunannotatedtag=$(git config --bool hooks.update-allow-tags-branches.unannotatedtag)
 allowdeletebranch=$(git config --bool hooks.update-allow-tags-branches.deletebranch)
+allowcreatetag=$(git config --bool --default true --get hooks.update-allow-tags-branches.createtag)
 allowdeletetag=$(git config --bool hooks.update-allow-tags-branches.deletetag)
 allownakedtag=$(git config --bool hooks.update-allow-tags-branches.nakedtag)
 tagnameregexp=$(git config hooks.update-allow-tags-branches.tagnameregexp)
@@ -48,6 +52,8 @@ fi
 # if $newrev is 0000...0000, it's a commit to delete a ref.
 if [ "$newrev" = "0000000000000000000000000000000000000000" ]; then
 	newrev_type=delete
+elif [ "$oldrev" = "0000000000000000000000000000000000000000" ]; then
+	newrev_type=create
 else
 	newrev_type=$(git-cat-file -t $newrev)
 fi
@@ -78,6 +84,13 @@ case "$refname","$newrev_type" in
 				display_error_message "The tag $short_refname violates the tag naming convention, rejected." "$tagnamehint"
 				exit 1
 			fi
+		fi
+		;;
+	refs/tags/*,create)
+		# create tag
+		if [ "$allowcreatetag" != "true" ]; then
+			display_error_message "Creating tags is not allowed"
+			exit 1
 		fi
 		;;
 	refs/tags/*,delete)
